@@ -5,18 +5,19 @@
 目录
 ---
 1. 环境概况
-2. 显卡
-3. 有线网卡
-4. 无线网卡
-5. 亮度调节记忆
-6. 声卡
-7. 定制USB
-8. 触摸板
-9. 电池状态显示
-10. 蓝牙
-11. 传感器
-10. 常见问题
-11. 参考文献
+2. 解锁BIOS
+3. 显卡
+4. 有线网卡
+5. 无线网卡
+6. 亮度调节记忆
+7. 声卡
+8. 定制USB
+9. 触摸板
+10. 电池状态显示
+11. 蓝牙
+12. 传感器
+13. 常见问题
+14. 参考文献
 
 环境概况
 ---
@@ -25,6 +26,8 @@
 操作系统：macOS Catalina 10.15.3
 
 引导：CLOVER 2.5k(r5100)
+
+BIOS\*：AMI（需重新刷写以解锁部分配置项）
 
 CPU：Intel Core i7-8750H 6 Cores/12 Threads, up to 4.1GHz
 
@@ -43,6 +46,82 @@ GPU：Intel UHD Graphics 630 （独显屏蔽）
 无线\*：BCM94352z（DW1560）
 
 声卡：ALC256 3.5mm二合一
+
+解锁BIOS
+---
+官方BIOS隐藏了很多配置项，其中包含一些使得macOS可以启动所必须启用或禁用的功能，当然通过一些软件层面的手段可以进行修补，但刷写BIOS是一劳永逸的，即使不再玩黑果，也能发掘机器更深的潜力。所有未解锁BIOS的灵刃系列笔记本在安装黑苹果前都应该手动解锁和刷写BIOS。
+
+> 在刷写之前务必确保当前的BIOS、EC、ME等均已是官方最新版！
+
+* **BIOS备份**
+
+在Windows下，打开AFUWINGUIx64，点击储存按钮，将当前BIOS文件导出并备份到某个安全的目录下。
+
+* **BIOS修改**
+
+打开AMIBCP64，点击File - Open，打开刚才导出的BIOS文件。在左边的导航栏展开根目录下的Setup目录，选择某条目后，右边会出现对应的配置项，每一个配置项记录都有一个Access/Use字段，将该字段值从Default改为USER即可启用该配置，即开机进入BIOS后可以看到该配置。需要开启的配置项有：
+
+*
+    - Advanced/Power & Performance/
+        * Power & Performance（第二行）
+        * CPU - Power Management Control
+        * Intel(R) Speed Shift Technology
+    - Advanced/Power & Performance/CPU - Power Management Control/
+        * CPU - Power Management Control（第二行）
+        * Intel(R) SpeedStep(tm)
+        * Intel(R) Speed Shift Technology
+        * C states
+        * IO MWAIT Redirection
+        * Package C State Limit
+        * Timed MWAIT
+        * CPU Lock Configuration
+    - Advanced/Power & Performance/CPU - Power Management Control/View/Configure CPU Lock Options/
+        * CFG Lock
+        * Overclocking Lock
+    - Chipset/
+        * System Agent (SA) Configuration
+    - Chipset/System Agent (SA) Configuration/
+        * System Agent (SA) Configuration（第二行）
+        * VT-d（第五行）
+        * Graphics Configuration
+        * VT-d（另一个）
+    - Chipset/System Agent (SA) Configuration/Graphics Configuration/
+        * Graphics Configuration（第二行）
+        * Primary Display
+        * Internal Graphics
+        * DVMT Pre-Allocated（Optimal改为64M或128M）
+        * DVMT Total Gfx Mem
+	
+将BIOS另存为另一个文件。
+	
+* **BIOS刷写**
+
+打开AFUWINGUIx64，打开刚才修改后的BIOS文件，点击刷新开始刷写，其间尽量不要进行其他操作。
+
+* **BIOS配置**
+
+重启进入BIOS菜单，进行如下配置：
+
+*   
+    - Advanced
+        - Power & Performance
+            - CPU - Power Management Control
+                - CPU Lock Configuration
+                    * 禁用CFG Lock
+                    * 禁用Overclocking Lock
+    - Advanced
+        - Thunderbolt(TM) Configuration
+            * 将Security Level设置为No Security
+    - Chipset
+        - System Agent (SA) Configuration
+            - 禁用VT-d
+            - Graphics Configuration
+                * 设置DVMT Pre-Allocated为64或128
+                * 设置DVMT Total Gfx Mem为MAX
+    - Security
+        * 禁用Secure Boot
+    - Boot
+        * 禁用Fast Boot
 
 显卡
 ---
@@ -190,17 +269,17 @@ Modified Verbs in One Line: 01271c40 01271d00 01271ea6 01271fb0 01371c00 01371d0
 [Fixed]是内部设备；[Jack]是通过插孔进行连接的外部设备；[N/A]是其它未知设备
 
 ```
-Node     c  d  e  f   Description
-12			40 01 a6 b7		[Fixed] Mic at Oth Mobile-In
-13			00 00 00 40		[N/A]Line Out at Ext N/A  无效，需要屏蔽
-14			20 01 17 90		[Fixed] Speaker at Int N/A	
-18			f0 11 11 41		[N/A]Speaker at Ext Rear
-19			30 10 a1 04		[Jack] Mic at Ext Right
-1a			f0 11 11 41		[N/A]Speaker at Ext Rear
-1b			f0 11 11 41		[N/A]Speaker at Ext Rear
-1d			2d 9a 67 40		[N/A]Modem Line at Ext N/A  无效，需要屏蔽
-1e			f0 11 11 41		[N/A]Speaker at Ext Rear
-21			10 10 21 04		[Jack] HP Out at Ext Right
+Node     c  d  e  f     Description
+12	40 01 a6 b7     [Fixed] Mic at Oth Mobile-In
+13	00 00 00 40     [N/A]Line Out at Ext N/A
+14	20 01 17 90     [Fixed] Speaker at Int N/A	
+18	f0 11 11 41     [N/A]Speaker at Ext Rear
+19	30 10 a1 04     [Jack] Mic at Ext Right
+1a	f0 11 11 41	[N/A]Speaker at Ext Rear
+1b	f0 11 11 41     [N/A]Speaker at Ext Rear
+1d	2d 9a 67 40	[N/A]Modem Line at Ext N/A
+1e	f0 11 11 41	[N/A]Speaker at Ext Rear
+21	10 10 21 04	[Jack] HP Out at Ext Right
 ```
   
 （1）修正PinDefault
@@ -232,17 +311,17 @@ HP Out Ext : 10 10 21 04 -> 30 10 2b 02
 使用用f0 00 00 40屏蔽无效设备节点，以避免杂音和底噪。修正后的最终数据为：
   
 ```
-Node     c  d  e  f   Description
-12			10 01 a6 90		[Fixed] Mic at Oth Mobile-In
-13			f0 00 00 40		屏蔽
-14			40 01 17 90		[Fixed] Speaker at Int N/A	
-18			f0 00 00 40		屏蔽
-19			20 10 8b 02		[Jack] Mic at Ext Right	
-1a			f0 00 00 40		屏蔽
-1b			f0 00 00 40		屏蔽
-1d			f0 00 00 40	 	屏蔽
-1e			f0 00 00 40		屏蔽
-21			30 10 2b 02		[Jack] HP Out at Ext Right
+Node     c  d  e  f     Description
+12	10 01 a6 90	[Fixed] Mic at Oth Mobile-In
+13	f0 00 00 40	屏蔽
+14	40 01 17 90	[Fixed] Speaker at Int N/A	
+18	f0 00 00 40	屏蔽
+19	20 10 8b 02	[Jack] Mic at Ext Right	
+1a	f0 00 00 40	屏蔽
+1b	f0 00 00 40	屏蔽
+1d	f0 00 00 40	屏蔽
+1e	f0 00 00 40	屏蔽
+21	30 10 2b 02	[Jack] HP Out at Ext Right
 ```
   
 （2）生成ConfigData
@@ -401,7 +480,7 @@ Comment: change XHCI to XHC
 
    Find: 58484349
 
-Replace: 5848435f
+Replace: 5848435F
 
 * 重启，打开Hackintool转到工具栏 – USB，删掉所有端口并刷新，确认本机全部的USB端口情况；
 
@@ -541,7 +620,7 @@ Find: 54504430
      
 Replace: 54504458
   
-（2）Windows Patch，对应SSDT-XOSI.aml
+（2）Windows Patch，对应RehabMan的SSDT-XOSI.aml
   
 Comment: change _OSI to XOSI
   
@@ -549,7 +628,7 @@ Find: 5F4F5349
      
 Replace: 584F5349
   
-（3）GPIO Controller Enabling，对应SSDT-GPI0.aml
+（3）GPIO Controller Enabling，对应上述自定义的SSDT-GPI0.aml
   
 Comment: change _STA to XSTA in GPI0
   
