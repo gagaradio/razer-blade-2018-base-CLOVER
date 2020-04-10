@@ -55,11 +55,11 @@ GPU：Intel UHD Graphics 630 （独显屏蔽）
 
 * **BIOS备份**
 
-在Windows下，打开AFUWINGUIx64，点击储存按钮，将当前BIOS文件导出并备份到某个安全的目录下。
+在Windows下，打开`AFUWINGUIx64`，点击`储存`按钮，将当前BIOS文件导出并备份到某个安全的目录下。
 
 * **BIOS修改**
 
-打开AMIBCP64，点击File - Open，打开刚才导出的BIOS文件。在左边的导航栏展开根目录下的Setup目录，选择某条目后，右边会出现对应的配置项，每一个配置项记录都有一个Access/Use字段，将该字段值从Default改为USER即可启用该配置，即开机进入BIOS后可以看到该配置。需要开启的配置项有：
+打开`AMIBCP64`，点击`File` - `Open`，打开刚才导出的BIOS文件。在左边的导航栏展开根目录下的`Setup`目录，选择某条目后，右边会出现对应的配置项，每一个配置项记录都有一个`Access/Use`字段，将该字段值从`Default`改为`USER`即可启用该配置，即开机进入BIOS后可以看到该配置。需要开启的配置项有：
 
 *
     - Advanced/Power & Performance/
@@ -96,7 +96,7 @@ GPU：Intel UHD Graphics 630 （独显屏蔽）
 	
 * **BIOS刷写**
 
-打开AFUWINGUIx64，打开刚才修改后的BIOS文件，点击刷新开始刷写，其间尽量不要进行其他操作。
+打开`AFUWINGUIx64`，打开刚才修改后的BIOS文件，点击`刷新`开始刷写，其间尽量不要进行其他操作。
 
 * **BIOS配置**
 
@@ -125,13 +125,42 @@ GPU：Intel UHD Graphics 630 （独显屏蔽）
 
 显卡
 ---
-* **驱动集显**
+在10.14及以后的macOS中，驱动集显需要采用Lilu.kext + WhateverGreen.kext + FrameBuffer补丁的方式。
 
-待补充
+* **确定集显设备路径**
+
+先使用hotpatch重命名补丁，修正集显设备的ACPI名称：
+
+Comment: change GFX0 to IGPU
+
+   Find: 47465830
+
+Replace: 49475055
+
+或者直接将Lilu.kext和WhateverGreen.kext放入CLOVER/kexts/Other，重启，上述重命名过程会由WhateverGreen.kext自动完成。
+
+使用[gfxutil](https://github.com/acidanthera/gfxutil)工具获取集显设备路径：
+
+```
+gfxutil -f igpu
+```
+
+* **打FrameBuffer补丁**
+
+打开`Clover Configurator`，挂载EFI分区，打开使用的`config.plist`。切换到`设备设置`界面，在下方的`属性`选项卡中，左边的`设备`栏中原样拷贝刚刚获取的设备路径，然后在右边的栏位中输入补丁参数。填写完毕后保存。
+
+|属性键|属性值|值类型|含义|
+|:----|:----|:----|:--|
+|AAPL,ig-platform-id|00009B3E|DATA|平台ID，直接影响集显的成功驱动与否。对于灵刃，推荐使用00009B3E|
+|framebuffer-patch-enable|01000000|DATA|FrameBuffer补丁的总开关。1启用，0不启用|
+|framebuffer-unifiedmem|000000A0|DATA|集显显存大小字节数|
+|framebuffer-stolenmem|00000004|DATA|DVMT预分配显存大小。如果已经解锁了BIOS的相关配置项，此处可以省略|
+
+> 对于DATA类型，属性值为16进制数，填写的时候需要两两颠倒，比如显存大小2560M=2560\*1024\*1024=2684354560字节（10进制）=A0000000（16进制），两两颠倒后即为000000A0。
 
 * **屏蔽N卡独显**
 
-使用[Rehabman](https://github.com/RehabMan/OS-X-Clover-Laptop-Config/tree/master/hotpatch)大神的hotpatch，将其中的SSDT-DDGPU.dsl文件修改为只保留自己的独显设备路径，灵刃15"(2018)标准版的为`_SB.PCI0.PEG0.PEGP`，修改后的完整内容如下，然后编译放到CLOVER/ACPI/patched。
+使用[Rehabman](https://github.com/RehabMan/OS-X-Clover-Laptop-Config/tree/master/hotpatch)大神的hotpatch，将其中的SSDT-DDGPU.dsl文件修改为只保留自己的独显设备路径，灵刃15"(2018)标准版的为`_SB.PCI0.PEG0.PEGP`，修改后的完整内容如下，然后编译放到CLOVER/ACPI/patched。 
 
 ```
 // For disabling the discrete GPU
@@ -195,7 +224,7 @@ diskutil umountDisk diskX
 sudo dd if=path/to/image/Ubuntu-xx.xx-desktop-amd64.iso of=/dev/diskX bs=1m
 ```
   
-写入完成后，重启选择U盘引导，然后选择Try Ubuntu without installing。
+写入完成后，重启选择U盘引导，然后选择`Try Ubuntu without installing`。
   
 进入系统后，按<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>t</kbd>打开终端，键入命令：
   
@@ -210,7 +239,7 @@ codec文件要么在card0，要么在card1，复制出来的文件有一个是�
   
 * **格式化有效节点**
 
-进入macOS，使用脚本输出声卡的有效节点。如果产生文件错误，需要删除codec中的AFG Function Id: 0x1 (unsol 1)和空行。
+进入macOS，使用脚本输出声卡的有效节点。如果产生文件错误，需要删除codec中的`AFG Function Id: 0x1 (unsol 1)`和空行。
   
 ```
 verbit.sh codec#0 > ALC256_dump.txt
@@ -253,7 +282,7 @@ Modified Verbs in One Line: 01271c40 01271d00 01271ea6 01271fb0 01371c00 01371d0
   
 > 名词解释：`Codec: Realtek ALC256`指的是声卡型号是ALC256；`Address: 0`指的是生成ConfigData的数据前缀是0，在Modified Verbs in One Line后面的每组数据的第一位就是这个0；`DevID: 283902550 (0x10ec0256)`指的是vendorID（0x10ec）和设备型号（0256），283902550是对应的十进制形式。
   
-脚本中的Modified Verbs就是为我们整理出的有效节点，但是仍然不准确，将所有PinDefault最高位为4的节点去掉，剩下的就是最终的有效节点：
+脚本中的`Modified Verbs`就是为我们整理出的有效节点，但是仍然不准确，将所有PinDefault最高位为4的节点去掉，剩下的就是最终的有效节点：
   
 |节点ID（十进制）|节点ID|节点描述|
 |:--------------|:-----|:-----|
@@ -264,7 +293,7 @@ Modified Verbs in One Line: 01271c40 01271d00 01271ea6 01271fb0 01371c00 01371d0
   
 * **整理ConfigData**
 
-将ALC256_dump.txt的所有节点或只将上一步整理出的有效节点按如下样式整理，并对PinDefault做小端变换：
+将ALC256_dump.txt的所有节点或只将上一步整理出的有效节点按如下样式整理，并对`PinDefault`做小端变换：
   
 [Fixed]是内部设备；[Jack]是通过插孔进行连接的外部设备；[N/A]是其它未知设备
 
@@ -462,7 +491,7 @@ IOKitPersonalities
   
 * **实现声卡驱动**
 
-将DEBUG版本的Lilu放入AppleALC-master根目录，使用Xcode编译AppleALC-master中的AppleALC.xcodeproj，并将构建好的驱动文件放入CLOVER驱动目录。在CLOVER – Devices – Audio – Inject注入正确的layout-id值，如13。并在Clover Configurator中加入hotpatch重命名补丁：
+将DEBUG版本的Lilu放入AppleALC-master根目录，使用Xcode编译AppleALC-master中的AppleALC.xcodeproj，并将构建好的驱动文件放入CLOVER驱动目录。在`CLOVER` – `Devices` – `Audio` – `Inject`注入正确的layout-id值，如13。并在`Clover Configurator`中加入hotpatch重命名补丁：
   
 Comment: change HDAS to HDEF
 	
@@ -484,11 +513,11 @@ Replace: 5848435F
 
 * 重启，打开Hackintool转到工具栏 – USB，删掉所有端口并刷新，确认本机全部的USB端口情况；
 
-* 在CLOVER启动参数中加入-uia_exclude_ss后重启，再进入Hackintool看到的就是屏蔽了所有usb3.0端口后剩下的端口。用一个usb2.0以上的设备插拔所有外部物理usb接口，记录使用到的端口（标绿色的）；
+* 在CLOVER启动参数中加入`-uia_exclude_ss`后重启，再进入`Hackintool`看到的就是屏蔽了所有usb3.0端口后剩下的端口。用一个usb2.0以上的设备插拔所有外部物理usb接口，记录使用到的端口（标绿色的）；
 
-* 将上述启动参数改为-uia_exclude_hs uia_include=HS08（HS08为内置键盘使用的端口）后重启，再进入Hackintool看到的就是屏蔽了所有usb2.0端口后剩下的端口。用一个usb3.0设备插拔所有外部物理usb接口，记录使用到的端口（标绿色的）；
+* 将上述启动参数改为`-uia_exclude_hs uia_include=HS08`（HS08为内置键盘使用的端口）后重启，再进入`Hackintool`看到的就是屏蔽了所有usb2.0端口后剩下的端口。用一个usb3.0设备插拔所有外部物理usb接口，记录使用到的端口（标绿色的）；
 
-* 删掉上述启动参数后重启，进入Hackintool，刚才所有标绿色的端口必须保留，其他端口酌情删除，最后剩下不超过15个端口即可；
+* 删掉上述启动参数后重启，进入`Hackintool`，刚才所有标绿色的端口必须保留，其他端口酌情删除，最后剩下不超过15个端口即可；
 
 * 设置连接器类型
 
@@ -524,7 +553,7 @@ APIC 中断：当IOInterruptSpecifiers值没有或者小于0x2F时，此时就�
 
 * 确认BIOS设备名称（即ACPI ID）
 
-在Windows设备管理器中找到I2C HID设备，打开 属性 – 详细信息 – BIOS设备名称。一般情况的对应关系如下，X为某个数字：
+在Windows设备管理器中找到I2C HID设备，打开`属性` – `详细信息` – `BIOS设备名称`。一般情况的对应关系如下，X为某个数字：
 
 触摸板 - TPDX, ELAN, SYNA, CYPR
   
